@@ -39,7 +39,7 @@
   "author": "Angelo Regalbuto / Regal Health & Retirement LLC",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "peerDependencies": {
     "@modelcontextprotocol/sdk": ">=1.0.0"
