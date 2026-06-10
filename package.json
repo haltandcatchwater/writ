@@ -20,6 +20,12 @@
     "demo": "tsc && node dist/examples/lethal-trifecta/demo.js",
     "clean": "rm -rf dist"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/haltandcatchwater/writ.git"
+  },
+  "homepage": "https://github.com/haltandcatchwater/writ#readme",
+  "bugs": "https://github.com/haltandcatchwater/writ/issues",
   "keywords": [
     "ai-agents",
     "agent-security",
