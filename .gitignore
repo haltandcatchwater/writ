@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.log
+.env
+.env.*
+.DS_Store
+
+# Internal staging — not for the public repo
+LAUNCH.md

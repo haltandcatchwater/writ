@@ -1,0 +1,51 @@
+{
+  "name": "agent-writ",
+  "version": "0.1.0",
+  "description": "Writ — typed, frozen permission grants for AI agent tools. MCP gives your agent tools. Writ gives them permissions.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "AGENTS.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "demo": "tsc && node dist/examples/lethal-trifecta/demo.js",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "ai-agents",
+    "agent-security",
+    "mcp",
+    "permissions",
+    "capability-security",
+    "scoped-tools",
+    "prompt-injection",
+    "least-privilege"
+  ],
+  "author": "Angelo Regalbuto / Regal Health & Retirement LLC",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": ">=1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@modelcontextprotocol/sdk": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^3.0.0"
+  }
+}
