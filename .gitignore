@@ -7,3 +7,6 @@ dist/
 
 # Internal staging — not for the public repo
 LAUNCH.md
+
+# Local agent state
+.claude/
