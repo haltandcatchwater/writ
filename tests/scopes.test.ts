@@ -292,6 +292,7 @@ describe("StripeChannel scope", () => {
   beforeAll(() => {
     process.env.WRIT_TEST_STRIPE_KEY = "sk_test_fake";
     process.env.WRIT_TEST_STRIPE_LIVE_KEY = "sk_live_fake";
+    process.env.WRIT_TEST_STRIPE_RESTRICTED_LIVE_KEY = "rk_live_fake";
   });
 
   function makeChannel() {
@@ -320,6 +321,48 @@ describe("StripeChannel scope", () => {
           timeoutMs: 5000,
         }),
     ).toThrow(/sk_live_/);
+  });
+
+  it("throws at construction on a RESTRICTED live key (rk_live_) — audit fix", () => {
+    // The prior check only matched sk_live_, so rk_live_ restricted keys sailed
+    // past the livemode gate and operated against the live Stripe API.
+    expect(
+      () =>
+        new StripeChannel("payments-restricted-live", {
+          description: "x",
+          apiKeyEnvVar: "WRIT_TEST_STRIPE_RESTRICTED_LIVE_KEY",
+          livemodeAllowed: false,
+          allowedOperations: ["getCustomer"],
+          maxOpsPerRun: 10,
+          maxOpsPerMinute: 10,
+          timeoutMs: 5000,
+        }),
+    ).toThrow(/rk_live_/);
+  });
+
+  it("denies a refund that omits amountCents when a cap is set — audit fix", () => {
+    // Omitting amountCents → Stripe refunds the FULL charge. With a cap set,
+    // this must be denied (the full charge could exceed the cap). The prior code
+    // skipped the cap check when amountCents was omitted.
+    const v = makeChannel().validateIntent({
+      operation: "refundCharge",
+      charge: "ch_123",
+    });
+    expect(v).toMatch(/requires amountCents.*maxRefundAmountCents/);
+  });
+
+  it("allows a refund that omits amountCents when NO cap is set (full refund permitted)", () => {
+    const noCap = new StripeChannel("payments-nocap", {
+      description: "refunds, no amount cap",
+      apiKeyEnvVar: "WRIT_TEST_STRIPE_KEY",
+      livemodeAllowed: false,
+      allowedOperations: ["refundCharge"],
+      maxOpsPerRun: 10,
+      maxOpsPerMinute: 10,
+      timeoutMs: 5000,
+    });
+    const v = noCap.validateIntent({ operation: "refundCharge", charge: "ch_123" });
+    expect(v).toBeNull();
   });
 
   it("denies a refund over the cap", () => {

@@ -54,9 +54,12 @@ export class StripeChannel extends ScopedChannel<StripeScope> {
   constructor(name: string, scope: StripeScope) {
     super(name, scope, "payments");
     this.apiKey = resolveSecretFromEnv(scope.apiKeyEnvVar);
-    if (this.apiKey.startsWith("sk_live_") && !scope.livemodeAllowed) {
+    // Catch BOTH secret live keys (sk_live_) AND restricted live keys (rk_live_).
+    // The prior check only matched sk_live_, so an rk_live_ restricted key sailed
+    // past the gate and operated against the live Stripe API. (Audit fix.)
+    if (/^(sk|rk)_live_/.test(this.apiKey) && !scope.livemodeAllowed) {
       throw new Error(
-        "StripeChannel: API key is a live key (sk_live_) but scope.livemodeAllowed is false. Use a test key or explicitly set livemodeAllowed: true.",
+        "StripeChannel: API key is a live key (sk_live_ or rk_live_) but scope.livemodeAllowed is false. Use a test key (sk_test_/rk_test_) or explicitly set livemodeAllowed: true.",
       );
     }
     this.rateLimiter = new RateLimiter(scope.maxOpsPerMinute);
@@ -88,7 +91,15 @@ export class StripeChannel extends ScopedChannel<StripeScope> {
     }
     if (req.operation === "refundCharge") {
       if (!req.charge) return "refundCharge requires charge";
-      if (req.amountCents !== undefined) {
+      if (req.amountCents === undefined) {
+        // Omitting amountCents → Stripe refunds the FULL charge. If a cap is set,
+        // we cannot prove the full amount is within it, so reject. The prior code
+        // skipped the cap check entirely when amountCents was omitted, so an agent
+        // could refund an entire charge past maxRefundAmountCents. (Audit fix.)
+        if (this.scope.maxRefundAmountCents !== undefined) {
+          return "refundCharge requires amountCents when scope.maxRefundAmountCents is set — omitting it refunds the full charge, which could exceed the cap";
+        }
+      } else {
         if (typeof req.amountCents !== "number" || req.amountCents <= 0) {
           return "refundCharge amountCents must be a positive number";
         }
